@@ -1,6 +1,9 @@
+<<<<<<< HEAD
 # 私有数据
 data/
 
+=======
+>>>>>>> 6229962d2981436cf598f46058fb58a406f86af1
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
@@ -207,4 +210,8 @@ cython_debug/
 # Marimo
 marimo/_static/
 marimo/_lsp/
+<<<<<<< HEAD
 __marimo__/
+=======
+__marimo__/
+>>>>>>> 6229962d2981436cf598f46058fb58a406f86af1
