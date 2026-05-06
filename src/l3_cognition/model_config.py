@@ -1,0 +1,13 @@
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+MODEL_ROUTING = {
+    "chat": {
+        "provider": "aliyun_bailian",
+        "model": "qwen3.5-35b-a3b",
+        "api_key": os.getenv("DASHSCOPE_API_KEY"),
+        "base_url": os.getenv("DASHSCOPE_BASE_URL", "https://dashscope.aliyuncs.com/compatible-mode/v1")
+    },
+}

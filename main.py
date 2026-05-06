@@ -1,33 +1,41 @@
 import os
+import sys
 import logging
 
 os.environ["HTTP_PROXY"] = ""
 os.environ["HTTPS_PROXY"] = ""
 
-from core.config import get_config
-from core.provider import LLMProvider
-from core.memory_store import MemoryManager
-from core.memory import MemorySystem
-from core.personality import load_personality
-from core.chat_service import ChatService
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+from src.l4_data.config import get_config
+from src.l3_cognition.provider import LLMProvider
+from src.l4_data.memory_store import MemoryManager
+from src.l4_data.memory.memory_system import MemorySystem
+from src.l2_guardrails import GuardrailPipeline
+from src.l3_cognition.graph import CognitionEngine
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 
-config = get_config()
-
-llm = LLMProvider()
-memory = MemoryManager()
-memory_system = MemorySystem(llm, config.db_path, config.memory_dir, config.personality_path)
-personality = load_personality(config.personality_path)
-chat_service = ChatService(llm, memory, personality, memory_system)
-
 
 def main():
-    print("正在初始化系统...")
-    session_id = "default_session"
+    config = get_config()
+
+    llm = LLMProvider()
+    memory = MemoryManager()
+    memory_system = MemorySystem(llm, config.db_path, config.memory_dir, config.personality_path)
+    guardrail_pipeline = GuardrailPipeline()
+
+    engine = CognitionEngine(
+        llm=llm,
+        memory=memory,
+        memory_system=memory_system,
+        guardrail_pipeline=guardrail_pipeline,
+    )
 
     print("AI 助手已启动（输入 'quit' 退出）")
     print("-" * 40)
+
+    session_id = "default_session"
 
     while True:
         user_input = input("Me: ")
@@ -36,7 +44,7 @@ def main():
             break
 
         try:
-            reply = chat_service.chat(user_input, session_id)
+            reply = engine.chat(user_input, session_id)
             print(f"AI: {reply}")
         except Exception as e:
             print(f"调用模型时发生错误: {e}")

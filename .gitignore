@@ -5,6 +5,13 @@ personality.md
 # Claude Code 本地配置
 .claude/
 
+# Node.js
+node_modules/
+frontend/node_modules/
+
+# Tauri build artifacts
+frontend/src-tauri/target/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
