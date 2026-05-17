@@ -121,3 +121,70 @@ class CognitionEngine:
 
         result = self._graph.invoke(initial_state)
         return result.get("response", "")
+
+    def chat_stream(self, message: str, session_id: str = "default_session"):
+        state = {
+            "message": message,
+            "session_id": session_id,
+            "history": [],
+            "context": "",
+            "response": "",
+            "metrics": {},
+            "guardrail_input": {},
+            "guardrail_output": {},
+            "_llm": self.llm,
+            "_memory": self.memory,
+            "_memory_system": self.memory_system,
+            "_guardrail_pipeline": self.guardrail_pipeline,
+        }
+
+        state = _guardrail_input_node(state)
+        guard_result = state.get("guardrail_input", {})
+        if guard_result and not guard_result.get("passed", True):
+            yield state["response"]
+            return
+
+        state = memory_node(state)
+
+        memory = self.memory
+        history = memory.get_recent_history(limit=1, session_id=session_id)
+        if not history:
+            title = message[:15] + ("..." if len(message) > 15 else "")
+            memory.update_session_meta(session_id, title=title)
+        else:
+            memory.update_session_meta(session_id)
+
+        memory.add_message(role="user", content=message, session_id=session_id)
+
+        system_prompt = state.get("context", "")
+        if not system_prompt and self.memory_system:
+            system_prompt = self.memory_system.build_system_prompt(session_id, message)
+
+        messages = [{"role": "system", "content": system_prompt}]
+        chat_history = memory.get_recent_history(limit=10, session_id=session_id)
+        messages.extend(chat_history)
+
+        full_reply = ""
+        thinking = True
+        for chunk in self.llm.get_response_stream(messages):
+            delta = chunk.choices[0].delta
+            if delta.content:
+                if thinking:
+                    thinking = False
+                    yield "\x00THINKING_DONE\x00"
+                full_reply += delta.content
+                yield delta.content
+            elif thinking and hasattr(delta, 'reasoning_content') and delta.reasoning_content:
+                yield "\x00THINKING\x00"
+
+        logger.info("模型流式回复完成: %s", full_reply[:80])
+        memory.add_message(role="assistant", content=full_reply, session_id=session_id)
+
+        if self.guardrail_pipeline:
+            result = self.guardrail_pipeline.check_output(full_reply, message)
+            if not result.passed and result.sanitized_content:
+                pass
+
+        if self.memory_system:
+            recent = memory.get_recent_history(limit=20, session_id=session_id)
+            self.memory_system.process_conversation_async(session_id, recent)

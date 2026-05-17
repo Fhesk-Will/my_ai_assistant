@@ -1,6 +1,6 @@
 import os
 from openai import OpenAI
-from src.l3_cognition.model_config import MODEL_ROUTING
+from src.l3_cognition.model_config import MODEL_ROUTING, get_current_model
 
 
 class LLMProvider:
@@ -20,10 +20,23 @@ class LLMProvider:
             base_url=base_url
         )
 
+    def _get_active_config(self):
+        return get_current_model()
+
     def get_response(self, messages):
+        cfg = self._get_active_config()
         response = self.client.chat.completions.create(
-            model=self.model,
+            model=cfg["model"],
             messages=messages,
             temperature=0.7
         )
         return response.choices[0].message.content
+
+    def get_response_stream(self, messages):
+        cfg = self._get_active_config()
+        return self.client.chat.completions.create(
+            model=cfg["model"],
+            messages=messages,
+            temperature=0.7,
+            stream=True
+        )

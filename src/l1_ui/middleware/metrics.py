@@ -1,27 +1,44 @@
 import logging
 import time
-from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.requests import Request
+from starlette.types import ASGIApp, Receive, Scope, Send
 
 logger = logging.getLogger(__name__)
 
 _metrics_store: list[dict] = []
 MAX_METRICS = 1000
 
+STREAM_PATHS = {"/api/chat/stream"}
 
-class MetricsMiddleware(BaseHTTPMiddleware):
-    """Token/状态/链路追踪中间件（骨架）"""
 
-    async def dispatch(self, request: Request, call_next):
+class MetricsMiddleware:
+    """Token/状态/链路追踪中间件 - 使用原生 ASGI 避免缓冲流式响应"""
+
+    def __init__(self, app: ASGIApp):
+        self.app = app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send):
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+
+        path = scope.get("path", "")
+        method = scope.get("method", "")
         start_time = time.time()
+        status_code = 0
 
-        response = await call_next(request)
+        async def send_wrapper(message):
+            nonlocal status_code
+            if message["type"] == "http.response.start":
+                status_code = message.get("status", 0)
+            await send(message)
+
+        await self.app(scope, receive, send_wrapper)
 
         duration = time.time() - start_time
         metric = {
-            "path": request.url.path,
-            "method": request.method,
-            "status_code": response.status_code,
+            "path": path,
+            "method": method,
+            "status_code": status_code,
             "duration_ms": round(duration * 1000, 2),
             "timestamp": time.time(),
         }
@@ -29,8 +46,6 @@ class MetricsMiddleware(BaseHTTPMiddleware):
         _metrics_store.append(metric)
         if len(_metrics_store) > MAX_METRICS:
             _metrics_store.pop(0)
-
-        return response
 
 
 def get_recent_metrics(limit: int = 50) -> list[dict]:

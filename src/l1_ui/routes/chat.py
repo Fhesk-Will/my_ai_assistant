@@ -1,4 +1,7 @@
+import json
+
 from fastapi import APIRouter, HTTPException
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from src.l3_cognition.graph import CognitionEngine
@@ -30,6 +33,31 @@ async def chat(request: ChatRequest):
         return {"reply": reply}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/chat/stream")
+async def chat_stream(request: ChatRequest):
+    def event_generator():
+        try:
+            thinking_sent = False
+            for chunk in _engine.chat_stream(request.message, request.session_id):
+                if chunk == "\x00THINKING\x00":
+                    if not thinking_sent:
+                        yield f"data: {json.dumps({'type': 'thinking'}, ensure_ascii=False)}\n\n"
+                        thinking_sent = True
+                elif chunk == "\x00THINKING_DONE\x00":
+                    yield f"data: {json.dumps({'type': 'thinking_done'}, ensure_ascii=False)}\n\n"
+                else:
+                    yield f"data: {json.dumps({'content': chunk}, ensure_ascii=False)}\n\n"
+            yield "data: [DONE]\n\n"
+        except Exception as e:
+            yield f"data: {json.dumps({'error': str(e)}, ensure_ascii=False)}\n\n"
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
 
 
 @router.get("/history")

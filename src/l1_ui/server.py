@@ -14,7 +14,7 @@ from src.l2_guardrails import GuardrailPipeline
 from src.l3_cognition.graph import CognitionEngine
 from src.l1_ui.routes.chat import router as chat_router, init_chat_routes
 from src.l1_ui.routes.memory import router as memory_router, init_memory_routes
-from src.l1_ui.routes.models import router as models_router
+from src.l1_ui.routes.models import router as models_router, init_models_routes
 from src.l1_ui.routes.observability import router as observability_router
 from src.l1_ui.middleware.metrics import MetricsMiddleware
 
@@ -50,6 +50,7 @@ def create_app() -> FastAPI:
     # 初始化路由依赖
     init_chat_routes(engine)
     init_memory_routes(memory_system, memory)
+    init_models_routes(llm)
 
     # 注册路由
     app.include_router(chat_router)

@@ -1,7 +1,10 @@
 <template>
   <div class="observability-layout">
     <header class="obs-header">
-      <router-link to="/" class="back-link">← 返回对话</router-link>
+      <button class="back-link" @click="$router.push('/')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+        返回对话
+      </button>
       <h1>可观测性监控面板</h1>
     </header>
 
@@ -18,7 +21,7 @@
         </div>
         <div class="card">
           <h3>近期错误</h3>
-          <p class="card-value">{{ summary.recent_errors || 0 }}</p>
+          <p class="card-value error">{{ summary.recent_errors || 0 }}</p>
         </div>
         <div class="card">
           <h3>记忆状态</h3>
@@ -113,66 +116,82 @@ onMounted(loadData)
   width: 100%;
   height: 100vh;
   overflow-y: auto;
-  padding: 24px;
+  padding: 32px;
+  background: #fafafa;
 }
 
 .obs-header {
   display: flex;
   align-items: center;
-  gap: 20px;
-  margin-bottom: 24px;
+  gap: 16px;
+  margin-bottom: 32px;
 }
 
 .obs-header h1 {
   font-size: 20px;
-  color: #e0e0e0;
+  font-weight: 600;
+  color: #1f2937;
 }
 
 .back-link {
-  color: #7aa0d0;
-  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  color: #6366f1;
+  cursor: pointer;
   font-size: 14px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  transition: background 0.15s ease;
 }
 
 .back-link:hover {
-  color: #9ac0f0;
+  background: #eef2ff;
 }
 
 .cards {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 16px;
-  margin-bottom: 32px;
+  margin-bottom: 36px;
 }
 
 .card {
-  background: #16213e;
-  border: 1px solid #2a2a4a;
-  border-radius: 12px;
-  padding: 20px;
+  background: white;
+  border: 1px solid #f3f4f6;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
 .card h3 {
   font-size: 12px;
-  color: #888;
+  color: #9ca3af;
   margin-bottom: 8px;
-  text-transform: uppercase;
+  font-weight: 500;
 }
 
 .card-value {
   font-size: 28px;
-  font-weight: bold;
-  color: #4a90d9;
+  font-weight: 700;
+  color: #6366f1;
+}
+
+.card-value.error {
+  color: #ef4444;
 }
 
 .section {
-  margin-bottom: 32px;
+  margin-bottom: 36px;
 }
 
 .section h2 {
   font-size: 16px;
-  color: #a0a0c0;
-  margin-bottom: 12px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 14px;
 }
 
 .memory-grid {
@@ -182,47 +201,58 @@ onMounted(loadData)
 }
 
 .memory-item {
-  background: #16213e;
-  border: 1px solid #2a2a4a;
-  border-radius: 8px;
-  padding: 12px 16px;
+  background: white;
+  border: 1px solid #f3f4f6;
+  border-radius: 12px;
+  padding: 14px 18px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   font-size: 13px;
+  color: #374151;
 }
 
 .memory-item .label {
-  color: #888;
+  color: #9ca3af;
+  font-weight: 500;
 }
 
 .metrics-table {
   width: 100%;
   border-collapse: collapse;
   font-size: 13px;
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid #f3f4f6;
 }
 
 .metrics-table th,
 .metrics-table td {
-  padding: 10px 12px;
+  padding: 12px 16px;
   text-align: left;
-  border-bottom: 1px solid #2a2a4a;
+  border-bottom: 1px solid #f3f4f6;
 }
 
 .metrics-table th {
-  color: #888;
-  font-weight: normal;
-  text-transform: uppercase;
+  color: #9ca3af;
+  font-weight: 500;
   font-size: 11px;
+  background: #fafafa;
+}
+
+.metrics-table td {
+  color: #374151;
 }
 
 .metrics-table td.error {
-  color: #ff6b6b;
+  color: #ef4444;
+  font-weight: 600;
 }
 
 .metrics-table .empty {
   text-align: center;
-  color: #666;
-  padding: 20px;
+  color: #9ca3af;
+  padding: 24px;
 }
 </style>
